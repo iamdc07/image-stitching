@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 import math
+import pano
 
 h_window = 5
 match_threshold = 0.6
@@ -14,10 +15,10 @@ def load_image():
     # coloured_img2 = cv2.imread("image_sets/graf/img2.ppm")
     # img2 = cv2.imread("image_sets/graf/img4.ppm", 0)
     # coloured_img2 = cv2.imread("image_sets/graf/img4.ppm")
-    # img = cv2.imread("image_sets/panorama/pano1_0008.jpg", 0)
-    # coloured_img = cv2.imread("image_sets/panorama/pano1_0008.jpg")
-    # img2 = cv2.imread("image_sets/panorama/pano1_0009.jpg", 0)
-    # coloured_img2 = cv2.imread("image_sets/panorama/pano1_0009.jpg")
+    img = cv2.imread("project_images/pano1_0008.jpg", 0)
+    coloured_img = cv2.imread("project_images/pano1_0008.jpg")
+    img2 = cv2.imread("project_images/pano1_0009.jpg", 0)
+    coloured_img2 = cv2.imread("project_images/pano1_0009.jpg")
     # img = cv2.imread("image_sets/panorama/pano1_0010.jpg", 0)
     # coloured_img = cv2.imread("image_sets/panorama/pano1_0010.jpg")
     # img2 = cv2.imread("image_sets/panorama/pano1_0011.jpg", 0)
@@ -26,10 +27,14 @@ def load_image():
     # coloured_img = cv2.imread("image_sets/yosemite/yosemite1.jpg")
     # img2 = cv2.imread("image_sets/yosemite/yosemite2.jpg", 0)
     # coloured_img2 = cv2.imread("image_sets/yosemite/yosemite2.jpg")
-    img = cv2.imread("project_images/Rainier1.png", 0)
-    coloured_img = cv2.imread("project_images/Rainier1.png")
-    img2 = cv2.imread("project_images/Rainier2.png", 0)
-    coloured_img2 = cv2.imread("project_images/Rainier2.png")
+    # img = cv2.imread("project_images/MelakwaLake3.png", 0)
+    # coloured_img = cv2.imread("project_images/MelakwaLake3.png")
+    # img2 = cv2.imread("project_images/MelakwaLake4.png", 0)
+    # coloured_img2 = cv2.imread("project_images/MelakwaLake4.png")
+    # img = cv2.imread("project_images/Rainier1.png", 0)
+    # coloured_img = cv2.imread("project_images/Rainier1.png")
+    # img2 = cv2.imread("project_images/Rainier2.png", 0)
+    # coloured_img2 = cv2.imread("project_images/Rainier2.png")
 
     height, width = img.shape
     pad = math.floor(h_window / 2)
@@ -64,7 +69,7 @@ def load_image():
     cv2.drawKeypoints(coloured_img, keypoints=kp1, outImage=coloured_img, color=(0, 0, 255),
                       flags=cv2.DRAW_MATCHES_FLAGS_DRAW_OVER_OUTIMG)
     cv2.imshow('Image 1', coloured_img)
-    cv2.imwrite("1b.png", coloured_img)
+    # cv2.imwrite("1b.png", coloured_img)
     cv2.waitKey(10000)
 
     height, width = img2.shape
@@ -97,7 +102,7 @@ def load_image():
     cv2.drawKeypoints(img2, keypoints=kp2, outImage=coloured_img2, color=(0, 0, 255),
                       flags=cv2.DRAW_MATCHES_FLAGS_DRAW_OVER_OUTIMG)
     cv2.imshow('Image 2', coloured_img2)
-    cv2.imwrite("1c.png", coloured_img2)
+    # cv2.imwrite("1c.png", coloured_img2)
     cv2.waitKey(10000)
 
     # Finding matches in two images
@@ -117,8 +122,10 @@ def load_image():
     result = cv2.drawMatches(coloured_img, kp1, coloured_img2, kp2, matches, None)
 
     cv2.imshow('Final Matches', result)
-    cv2.imwrite("2.png", result)
-    cv2.waitKey()
+    # cv2.imwrite("2.png", result)
+    cv2.waitKey(10000)
+
+    pano.ransac(matches, sift_descriptor1, sift_descriptor2)
 
 
 def find_matches(descriptor1, descriptor2):
