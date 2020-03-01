@@ -1,14 +1,18 @@
 import numpy as np
 import cv2
 import math
-import pano
+import pano, directory
 
 h_window = 5
 match_threshold = 0.6
 h_threshold = 30000000
+im1 = 0
+im2 = 0
+im3 = 0
+im4 = 0
 
 
-def load_image():
+def load_image(img, img2, coloured_img, coloured_img2):
     # img = cv2.imread("image_sets/graf/img1.ppm", 0)
     # coloured_img = cv2.imread("image_sets/graf/img1.ppm")
     # img2 = cv2.imread("image_sets/graf/img2.ppm", 0)
@@ -31,10 +35,16 @@ def load_image():
     # coloured_img = cv2.imread("project_images/MelakwaLake3.png")
     # img2 = cv2.imread("project_images/MelakwaLake4.png", 0)
     # coloured_img2 = cv2.imread("project_images/MelakwaLake4.png")
-    img = cv2.imread("project_images/Rainier1.png", 0)
-    coloured_img = cv2.imread("project_images/Rainier1.png")
-    img2 = cv2.imread("project_images/Rainier2.png", 0)
-    coloured_img2 = cv2.imread("project_images/Rainier2.png")
+    # img = cv2.imread("project_images/Rainier1.png", 0)
+    # coloured_img = cv2.imread("project_images/Rainier1.png")
+    # img2 = cv2.imread("project_images/Rainier2.png", 0)
+    # coloured_img2 = cv2.imread("project_images/Rainier2.png")
+    # img = cv2.imread("project_images/Rainier3.png", 0)
+    # coloured_img = cv2.imread("project_images/Rainier3.png")
+    # img2 = cv2.imread("project_images/Rainier4.png", 0)
+    # coloured_img2 = cv2.imread("project_images/Rainier4.png")
+
+    # img_list = get_batch(1)
 
     height, width = img.shape
     pad = math.floor(h_window / 2)
@@ -66,7 +76,7 @@ def load_image():
         kp1.append(cv2.KeyPoint(y, x, 1))
 
     # Mark the keypoints on the image
-    cv2.drawKeypoints(coloured_img, keypoints=kp1, outImage=coloured_img, color=(0, 0, 255),
+    cv2.drawKeypoints(coloured_img, keypoints=kp1, outImage=im1, color=(0, 0, 255),
                       flags=cv2.DRAW_MATCHES_FLAGS_DRAW_OVER_OUTIMG)
     # cv2.imshow('Image 1', coloured_img)
     # cv2.imwrite("1b.png", coloured_img)
@@ -99,7 +109,7 @@ def load_image():
     for x, y, d in sift_descriptor2:
         kp2.append(cv2.KeyPoint(y, x, 1))
 
-    cv2.drawKeypoints(img2, keypoints=kp2, outImage=coloured_img2, color=(0, 0, 255),
+    cv2.drawKeypoints(img2, keypoints=kp2, outImage=im2, color=(0, 0, 255),
                       flags=cv2.DRAW_MATCHES_FLAGS_DRAW_OVER_OUTIMG)
     # cv2.imshow('Image 2', coloured_img2)
     # cv2.imwrite("1c.png", coloured_img2)
@@ -114,9 +124,9 @@ def load_image():
     # cv2.waitKey(5000)
 
     # Calculate improved matches for the results obtained
-    t = 0.35 * math.sqrt((width ** 2) + (height ** 2))
-    matches = improved_matching(feature_points1, feature_points2, t, ssd_ratio_list, matches)
-    print(len(matches), "improved matches found!")
+    # t = 0.35 * math.sqrt((width ** 2) + (height ** 2))
+    # matches = improved_matching(feature_points1, feature_points2, t, ssd_ratio_list, matches)
+    # print(len(matches), "improved matches found!")
 
     # Map the matches from one Image to another
     result = cv2.drawMatches(coloured_img, kp1, coloured_img2, kp2, matches, None)
@@ -125,7 +135,10 @@ def load_image():
     # cv2.imwrite("2.png", result)
     # cv2.waitKey(10000)
 
-    pano.ransac(matches, sift_descriptor1, sift_descriptor2)
+    pano.set_images(img, img2, coloured_img, coloured_img2)
+    stitched = pano.ransac(matches, sift_descriptor1, sift_descriptor2)
+
+    return stitched
 
 
 def find_matches(descriptor1, descriptor2):
@@ -411,5 +424,55 @@ def calculate_grid_histogram(magnitude_grid, orientation_grid):
     return orientation_hist
 
 
+def get_batch(choice):
+    img_list = []
+
+    if choice == 1:
+        img = cv2.imread("project_images/Rainier1.png", 0)
+        img_list.append(img)
+        coloured_img = cv2.imread("project_images/Rainier1.png")
+        img_list.append(coloured_img)
+        img2 = cv2.imread("project_images/Rainier2.png", 0)
+        img_list.append(img2)
+        coloured_img2 = cv2.imread("project_images/Rainier2.png")
+        img_list.append(coloured_img2)
+
+        return img_list
+    elif choice == 2:
+        img = cv2.imread("project_images/yosemite1.jpg", 0)
+        img_list.append(img)
+        coloured_img = cv2.imread("project_images/yosemite1.jpg")
+        img_list.append(coloured_img)
+        img2 = cv2.imread("project_images/yosemite2.jpg", 0)
+        img_list.append(img2)
+        coloured_img2 = cv2.imread("project_images/yosemite2.jpg")
+        img_list.append(coloured_img2)
+        return img_list
+
+
+def process_images(choice):
+    file_list = directory.get_path(choice)
+
+    img = cv2.imread(file_list[0], 0)
+    coloured_img = cv2.imread(file_list[0])
+    img2 = cv2.imread(file_list[1], 0)
+    coloured_img2 = cv2.imread(file_list[1])
+
+    stitched = load_image(img, img2, coloured_img, coloured_img2)
+    cv2.imwrite("s.png", stitched)
+
+    for i in range(2, len(file_list)):
+        img = cv2.cvtColor(stitched, cv2.COLOR_BGR2GRAY)
+        coloured_img = stitched
+        img2 = cv2.imread(file_list[i], 0)
+        coloured_img2 = cv2.imread(file_list[i])
+
+        stitched = load_image(img, img2, coloured_img, coloured_img2)
+        cv2.imwrite("s" + str(i) + ".png", stitched)
+
+    cv2.imshow("Stitched", stitched)
+    cv2.waitKey()
+
+
 if __name__ == '__main__':
-    load_image()
+    process_images(4)

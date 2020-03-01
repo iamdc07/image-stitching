@@ -4,11 +4,16 @@ import random
 import math
 
 inlier_threshold = 10
-iterations = 50
+iterations = 250
+img = 0
+img2 = 0
+coloured_img = 0
+coloured_img2 = 0
 
-
-coloured_img = cv2.imread("project_images/Rainier1.png")
-coloured_img2 = cv2.imread("project_images/Rainier2.png")
+# coloured_img = cv2.imread("project_images/Rainier1.png")
+# coloured_img2 = cv2.imread("project_images/Rainier2.png")
+# coloured_img = cv2.imread("project_images/Rainier3.png")
+# coloured_img2 = cv2.imread("project_images/Rainier4.png")
 # coloured_img = cv2.imread("project_images/MelakwaLake1.png")
 # coloured_img2 = cv2.imread("project_images/MelakwaLake2.png")
 # coloured_img = cv2.imread("project_images/MelakwaLake3.png")
@@ -27,17 +32,17 @@ def project(x, y, h):
     # print(result)
     # print(result.shape, " | ", result.dtype)
     if result[2] != 0:
-        x2 = result[0] / result[2]
-        y2 = result[1] / result[2]
+        x2 = result[0][0] / result[2][0]
+        y2 = result[1][0] / result[2][0]
     else:
-        x2 = result[0]
-        y2 = result[1]
+        x2 = result[0][0]
+        y2 = result[1][0]
     # print(x2, " | ", y2)
     # result = cv2.perspectiveTransform(point_array, h)
 
     # x2 = result[0][0][0]
     # y2 = result[0][0][1]
-    # print(result[0])
+    # print(result)
     # exit(0)
 
     return x2, y2
@@ -68,7 +73,26 @@ def ransac(matches, descriptor1, descriptor2):
     j = 0
 
     while j <= iterations:
-        r = (random.sample(range(len(matches)), 4))
+        if len(matches) < 4:
+            r = (random.sample(range(len(matches)), len(matches)))
+        elif len(matches) == 1:
+            x, y, d = descriptor1[matches[0].queryIdx]
+            x1, y1, d1 = descriptor2[matches[0].trainIdx]
+            src_points.append([x, y])
+            dst_points.append([x1, y1])
+            the_tuple = cv2.findHomography(np.float32(src_points), np.float32(dst_points), 0)
+            h = the_tuple[0]
+            best_h = h
+            break
+        else:
+            r = (random.sample(range(len(matches)), 4))
+
+        print("RANDOM:", r)
+        # if r[0] or len(r) == 0:
+        #     src_points.clear()
+        #     dst_points.clear()
+        #     continue
+
         for i in r:
             # r = random.randint(0, len(matches) - 1)
 
@@ -81,6 +105,7 @@ def ransac(matches, descriptor1, descriptor2):
             src_points.append([x, y])
             dst_points.append([x1, y1])
 
+        # the_tuple = cv2.getAffineTransform(np.float32(src_points), np.float32(dst_points))
         the_tuple = cv2.findHomography(np.float32(src_points), np.float32(dst_points), 0)
         h = the_tuple[0]
         # print("H:", h)
@@ -130,11 +155,18 @@ def ransac(matches, descriptor1, descriptor2):
 def stitch(h, h_inv):
     corners = []
     new_corners = []
+    height1, width1 = img2.shape
 
-    img = cv2.imread("project_images/Rainier1.png", 0)
-    img2 = cv2.imread("project_images/Rainier2.png", 0)
+    # img = cv2.imread("project_images/Rainier1.png", 0)
+    # img2 = cv2.imread("project_images/Rainier2.png", 0)
+    # img = cv2.imread("project_images/Rainier3.png", 0)
+    # img2 = cv2.imread("project_images/Rainier4.png", 0)
     # img = cv2.imread("project_images/yosemite1.jpg", 0)
     # img2 = cv2.imread("project_images/yosemite2.jpg", 0)
+    # img = cv2.imread("project_images/MelakwaLake3.png", 0)
+    # img2 = cv2.imread("project_images/MelakwaLake4.png", 0)
+    # img = cv2.imread("project_images/pano1_0008.jpg", 0)
+    # img2 = cv2.imread("project_images/pano1_0009.jpg", 0)
 
     mat = np.array([[0, 0],
                     [0, img.shape[1]],
@@ -151,7 +183,7 @@ def stitch(h, h_inv):
     for i in range(0, 4):
         new_corners.append(project(corners[i][0], corners[i][1], h_inv))
 
-    # print("NEW CORNERS:", new_corners)
+    print("NEW CORNERS:", new_corners)
     new_corners = tuple(tuple(map(int, tup)) for tup in new_corners)
     new_corners = [list(elem) for elem in new_corners]
 
@@ -165,14 +197,11 @@ def stitch(h, h_inv):
     print("H:", height, " W:", width)
 
     stitched = np.zeros((height, width, 3), dtype=np.uint8)
-    stitched1 = np.zeros((800, 900, 3), dtype=np.uint8)
-    # print("STITCHED:", stitched.shape)
 
-    height1, width1 = img2.shape
     # print("H:", height1, " W:", width1)
-    for i in range(0, height1):
-        for j in range(0, width1):
-            stitched[i - val[0], j] = coloured_img[i, j]
+    for i in range(0, img.shape[0]):
+        for j in range(0, img.shape[1]):
+            stitched[i - val[0], j - val[1]] = coloured_img[i, j]
 
             # x2, y2 = project(i, j, h_inv)
             # print("X:", x2, " | Y:", y2)
@@ -182,20 +211,30 @@ def stitch(h, h_inv):
     # cv2.imshow("First Image", stitched1)
     # cv2.waitKey(5000)
     print(img2.shape)
-    for i in range(0, height):
-        for j in range(0, width):
+    for i in range(val[0], height):
+        for j in range(val[1], width):
             x2, y2 = project(i, j, h)
-            if 388 <= x2 and 517 <= y2:
-                print("X:", x2, " | Y:", y2)
+            x2 = math.floor(x2)
+            y2 = math.floor(y2)
+            # if 55 <= i <= 65 and 200 <= j <= 731:
+            #     print("X:", x2, " | Y:", y2, " I:", i, " J:", j)
             if 0 <= x2 < height1 and 0 <= y2 < width1:
                 # print("X:", x2, " | Y:", y2)
-                stitched[i - val[0], j] = coloured_img2[int(math.floor(x2)), int(math.floor(y2))]
+                # print("X:", x2, " | Y:", y2, " I:", i, " J:", j)
+                # if x2 < 0 and  y2 < 0:
+                #     stitched[x2, y2] = coloured_img2[int(math.floor(x2)), int(math.floor(y2))]
+                # else:
+                stitched[i - val[0], j - val[1]] = coloured_img2[x2, y2]
                 # if isinstance(x2, int) and isinstance(y2, int):
                 #     patch = coloured_img2[x2, y2]
                 #     point = patch
                 # else:
                 # patch = cv2.getRectSubPix(coloured_img2, (3, 3), (y2, x2))
                 # point = patch[1, 1]
+            # else:
+            #     stitched.itemset((i, j, 2), 200)
+                # stitched.itemset((i, j, 1), dst[1])
+                # stitched.itemset((i, j, 2), dst[2])
             # else:
             #     continue
             #     beta = (1.0 - 0.5)
@@ -205,8 +244,9 @@ def stitch(h, h_inv):
             # stitched.itemset((i, j, 2), dst[2])
             #     stitched[i, j] = np.ravel(dst)
 
-    cv2.imshow("Stitched", stitched)
-    cv2.waitKey()
+    # cv2.imshow("Stitched", stitched)
+    # cv2.waitKey()
+    return stitched
 
 
 def link_matches(inliers1, inliers2):
@@ -221,3 +261,11 @@ def link_matches(inliers1, inliers2):
         new_matches.append(each_match)
 
     return new_matches
+
+
+def set_images(im, im2, im3, im4):
+    global img, img2, coloured_img, coloured_img2
+    img = im
+    img2 = im2
+    coloured_img = im3
+    coloured_img2 = im4
