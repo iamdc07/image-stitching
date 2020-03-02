@@ -87,7 +87,7 @@ def ransac(matches, descriptor1, descriptor2):
         else:
             r = (random.sample(range(len(matches)), 4))
 
-        print("RANDOM:", r)
+        # print("RANDOM:", r)
         # if r[0] or len(r) == 0:
         #     src_points.clear()
         #     dst_points.clear()
@@ -217,14 +217,15 @@ def stitch(h, h_inv):
             x2 = math.floor(x2)
             y2 = math.floor(y2)
             # if 55 <= i <= 65 and 200 <= j <= 731:
-            #     print("X:", x2, " | Y:", y2, " I:", i, " J:", j)
+            # print("X:", x2, " | Y:", y2, " I:", i, " J:", j)
             if 0 <= x2 < height1 and 0 <= y2 < width1:
                 # print("X:", x2, " | Y:", y2)
-                # print("X:", x2, " | Y:", y2, " I:", i, " J:", j)
+                print("X:", x2, " | Y:", y2, " I:", i, " J:", j)
                 # if x2 < 0 and  y2 < 0:
                 #     stitched[x2, y2] = coloured_img2[int(math.floor(x2)), int(math.floor(y2))]
                 # else:
-                stitched[i - val[0], j - val[1]] = coloured_img2[x2, y2]
+                if (i - val[0] < height) and (j - val[1] < width):
+                    stitched[i - val[0], j - val[1]] = coloured_img2[x2, y2]
                 # if isinstance(x2, int) and isinstance(y2, int):
                 #     patch = coloured_img2[x2, y2]
                 #     point = patch

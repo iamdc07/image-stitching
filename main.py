@@ -424,32 +424,6 @@ def calculate_grid_histogram(magnitude_grid, orientation_grid):
     return orientation_hist
 
 
-def get_batch(choice):
-    img_list = []
-
-    if choice == 1:
-        img = cv2.imread("project_images/Rainier1.png", 0)
-        img_list.append(img)
-        coloured_img = cv2.imread("project_images/Rainier1.png")
-        img_list.append(coloured_img)
-        img2 = cv2.imread("project_images/Rainier2.png", 0)
-        img_list.append(img2)
-        coloured_img2 = cv2.imread("project_images/Rainier2.png")
-        img_list.append(coloured_img2)
-
-        return img_list
-    elif choice == 2:
-        img = cv2.imread("project_images/yosemite1.jpg", 0)
-        img_list.append(img)
-        coloured_img = cv2.imread("project_images/yosemite1.jpg")
-        img_list.append(coloured_img)
-        img2 = cv2.imread("project_images/yosemite2.jpg", 0)
-        img_list.append(img2)
-        coloured_img2 = cv2.imread("project_images/yosemite2.jpg")
-        img_list.append(coloured_img2)
-        return img_list
-
-
 def process_images(choice):
     file_list = directory.get_path(choice)
 
@@ -475,4 +449,4 @@ def process_images(choice):
 
 
 if __name__ == '__main__':
-    process_images(4)
+    process_images(2)
