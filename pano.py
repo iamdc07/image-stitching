@@ -4,7 +4,7 @@ import random
 import math
 
 inlier_threshold = 10
-iterations = 250
+iterations = 750
 img = 0
 img2 = 0
 coloured_img = 0
@@ -146,6 +146,112 @@ def ransac(matches, descriptor1, descriptor2):
     result = cv2.drawMatches(coloured_img, kp1, coloured_img2, kp2, new_matches, None)
     cv2.imshow('After RANSAC', result)
     cv2.waitKey(5000)
+    # cv2.imwrite("Ransac" + ".png", result)
+
+    h_inv = np.linalg.inv(h)
+
+    return stitch(h, h_inv)
+
+
+def opencv_inlier_count(matches, descriptor1, descriptor2, kp1, kp2, h):
+    inlier1 = []
+    inlier2 = []
+
+    for each_match in matches:
+        # d = descriptor1[each_match[0].queryIdx]
+        y = kp1[each_match[0].queryIdx].pt[0]
+        x = kp1[each_match[0].queryIdx].pt[1]
+        # d1 = descriptor2[each_match[0].trainIdx]
+        y1 = kp2[each_match[0].trainIdx].pt[0]
+        x1 = kp2[each_match[0].trainIdx].pt[1]
+        x2, y2 = project(x, y, h)
+        distance = math.sqrt(((x1 - x2) ** 2) + ((y1 - y2) ** 2))
+
+        if distance < inlier_threshold:
+            inlier1.append([x, y])
+            inlier2.append([x1, y1])
+
+    return len(inlier1), inlier1, inlier2
+
+
+def opencv_ransac(matches, descriptor1, descriptor2, kp1, kp2):
+    max_count = 0
+    src_points = []
+    dst_points = []
+    best_h = 0
+    j = 0
+
+    while j <= iterations:
+        if len(matches) < 4:
+            r = (random.sample(range(len(matches)), len(matches)))
+        # elif len(matches) == 1:
+        #     x, y = descriptor1[matches[0].queryIdx]
+        #     x1, y1 = descriptor2[matches[0].trainIdx]
+        #     src_points.append([x, y])
+        #     dst_points.append([x1, y1])
+        #     the_tuple = cv2.findHomography(np.float32(src_points), np.float32(dst_points), 0)
+        #     h = the_tuple[0]
+        #     best_h = h
+        #     break
+        else:
+            r = (random.sample(range(len(matches)), 4))
+
+        for i in r:
+            # r = random.randint(0, len(matches) - 1)
+
+            pair = matches[i]
+
+            # print(pair.queryIdx, " | Image2 index:", pair.trainIdx)
+            # d = descriptor1[pair[0].queryIdx]
+            y = kp1[pair[0].queryIdx].pt[0]
+            x = kp1[pair[0].queryIdx].pt[1]
+            # d1 = descriptor2[pair[0].trainIdx]
+            y1 = kp2[pair[0].trainIdx].pt[0]
+            x1 = kp2[pair[0].trainIdx].pt[1]
+            # print("X:", x, " Y:", y)
+            src_points.append([x, y])
+            dst_points.append([x1, y1])
+
+        the_tuple = cv2.findHomography(np.float32(src_points), np.float32(dst_points), 0)
+        h = the_tuple[0]
+        # print("H:", h)
+        # print("SRC:", len(src_points), " | DST:", len(dst_points))
+
+        count, inliers1, inliers2 = opencv_inlier_count(matches, descriptor1, descriptor2, kp1, kp2, h)
+        # print("COUNT:", count)
+
+        if count > max_count:
+            max_count = count
+            # max_inliers1 = inliers1
+            # max_inliers2 = inliers2
+            best_h = h
+
+        src_points.clear()
+        dst_points.clear()
+        j += 1
+
+    # count, max_inliers1, max_inliers2 = compute_inlier_count(best_h, matches, descriptor1, descriptor2)
+    count, max_inliers1, max_inliers2 = opencv_inlier_count(matches, descriptor1, descriptor2, kp1, kp2, best_h)
+
+    the_tuple = cv2.findHomography(np.float32(max_inliers1), np.float32(max_inliers2), 0)
+    h = the_tuple[0]
+    # print("After:", max_count, " | H:", h)
+    # exit(0)
+
+    kp1 = []
+    for x, y in max_inliers1:
+        kp1.append(cv2.KeyPoint(y, x, 1))
+
+    kp2 = []
+    for x, y in max_inliers2:
+        kp2.append(cv2.KeyPoint(y, x, 1))
+
+    new_matches = link_matches(max_inliers1, max_inliers2)
+    # print("After RANSAC:", len(new_matches), " matches")
+
+    result = cv2.drawMatches(coloured_img, kp1, coloured_img2, kp2, new_matches, None)
+    cv2.imshow('After RANSAC', result)
+    cv2.waitKey(5000)
 
     h_inv = np.linalg.inv(h)
 
@@ -220,7 +326,7 @@ def stitch(h, h_inv):
             # print("X:", x2, " | Y:", y2, " I:", i, " J:", j)
             if 0 <= x2 < height1 and 0 <= y2 < width1:
                 # print("X:", x2, " | Y:", y2)
-                print("X:", x2, " | Y:", y2, " I:", i, " J:", j)
+                # print("X:", x2, " | Y:", y2, " I:", i, " J:", j)
                 # if x2 < 0 and  y2 < 0:
                 #     stitched[x2, y2] = coloured_img2[int(math.floor(x2)), int(math.floor(y2))]
                 # else:

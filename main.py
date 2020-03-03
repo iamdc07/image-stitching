@@ -4,8 +4,8 @@ import math
 import pano, directory
 
 h_window = 5
-match_threshold = 0.6
-h_threshold = 30000000
+match_threshold = 0.7
+h_threshold = 10000000
 im1 = 0
 im2 = 0
 im3 = 0
@@ -13,39 +13,6 @@ im4 = 0
 
 
 def load_image(img, img2, coloured_img, coloured_img2):
-    # img = cv2.imread("image_sets/graf/img1.ppm", 0)
-    # coloured_img = cv2.imread("image_sets/graf/img1.ppm")
-    # img2 = cv2.imread("image_sets/graf/img2.ppm", 0)
-    # coloured_img2 = cv2.imread("image_sets/graf/img2.ppm")
-    # img2 = cv2.imread("image_sets/graf/img4.ppm", 0)
-    # coloured_img2 = cv2.imread("image_sets/graf/img4.ppm")
-    # img = cv2.imread("project_images/pano1_0008.jpg", 0)
-    # coloured_img = cv2.imread("project_images/pano1_0008.jpg")
-    # img2 = cv2.imread("project_images/pano1_0009.jpg", 0)
-    # coloured_img2 = cv2.imread("project_images/pano1_0009.jpg")
-    # img = cv2.imread("image_sets/panorama/pano1_0010.jpg", 0)
-    # coloured_img = cv2.imread("image_sets/panorama/pano1_0010.jpg")
-    # img2 = cv2.imread("image_sets/panorama/pano1_0011.jpg", 0)
-    # coloured_img2 = cv2.imread("image_sets/panorama/pano1_0011.jpg")
-    # img = cv2.imread("project_images/yosemite1.jpg", 0)
-    # coloured_img = cv2.imread("project_images/yosemite1.jpg")
-    # img2 = cv2.imread("project_images/yosemite2.jpg", 0)
-    # coloured_img2 = cv2.imread("project_images/yosemite2.jpg")
-    # img = cv2.imread("project_images/MelakwaLake3.png", 0)
-    # coloured_img = cv2.imread("project_images/MelakwaLake3.png")
-    # img2 = cv2.imread("project_images/MelakwaLake4.png", 0)
-    # coloured_img2 = cv2.imread("project_images/MelakwaLake4.png")
-    # img = cv2.imread("project_images/Rainier1.png", 0)
-    # coloured_img = cv2.imread("project_images/Rainier1.png")
-    # img2 = cv2.imread("project_images/Rainier2.png", 0)
-    # coloured_img2 = cv2.imread("project_images/Rainier2.png")
-    # img = cv2.imread("project_images/Rainier3.png", 0)
-    # coloured_img = cv2.imread("project_images/Rainier3.png")
-    # img2 = cv2.imread("project_images/Rainier4.png", 0)
-    # coloured_img2 = cv2.imread("project_images/Rainier4.png")
-
-    # img_list = get_batch(1)
-
     height, width = img.shape
     pad = math.floor(h_window / 2)
 
@@ -56,7 +23,16 @@ def load_image(img, img2, coloured_img, coloured_img2):
     print("------------------- For Image 1 -------------------")
 
     # SIFT for scale invariance
-    dst = sift_pyramid(img, height, width)
+    # dst = sift_pyramid(img, height, width)
+    # print(dst[0])
+    dst, des1, kp1 = opencv_sift(img, height, width)
+    # matches, ssd_ratio_list = find_matches(des1, des2)
+    # result = cv2.drawMatches(coloured_img, kp1, coloured_img2, kp2, matches, None)
+
+    # cv2.imshow('Final Matches', result)
+    # cv2.waitKey(10000)
+
+    # exit(0)
 
     dst, ix, iy = harris_detector(dst, height, width, pad, ix, iy)
 
@@ -69,7 +45,7 @@ def load_image(img, img2, coloured_img, coloured_img2):
     print("Adaptive Non-Maximum Suppression:", len(feature_points1))
 
     # Constructing the SIFT descriptor
-    sift_descriptor1 = sift(img, height, width, feature_points1)
+    sift_descriptor1 = sift_desc(img, height, width, feature_points1)
 
     kp1 = []
     for x, y, d in sift_descriptor1:
@@ -91,7 +67,8 @@ def load_image(img, img2, coloured_img, coloured_img2):
     print("------------------- For Image 2 -------------------")
 
     # SIFT for scale invariance
-    dst = sift_pyramid(img2, height, width)
+    # dst = sift_pyramid(img2, height, width)
+    dst, des2, kp2 = opencv_sift(img2, height, width)
     dst, ix, iy = harris_detector(dst, height, width, pad, ix, iy)
 
     # Finding the non-maximum suppression on the feature points
@@ -103,7 +80,7 @@ def load_image(img, img2, coloured_img, coloured_img2):
     print("Adaptive Non-Maximum Suppression:", len(feature_points2))
 
     # Constructing the SIFT descriptor
-    sift_descriptor2 = sift(img2, height, width, feature_points2)
+    sift_descriptor2 = sift_desc(img2, height, width, feature_points2)
 
     kp2 = []
     for x, y, d in sift_descriptor2:
@@ -131,14 +108,45 @@ def load_image(img, img2, coloured_img, coloured_img2):
     # Map the matches from one Image to another
     result = cv2.drawMatches(coloured_img, kp1, coloured_img2, kp2, matches, None)
 
-    # cv2.imshow('Final Matches', result)
+    cv2.imshow('Final Matches', result)
     # cv2.imwrite("2.png", result)
-    # cv2.waitKey(10000)
+    cv2.waitKey(5000)
 
+    # # create BFMatcher object
+    # bf = cv2.BFMatcher()
+    # matches = bf.knnMatch(des1, des2, k=2)
+    # # Sort them in the order of their distance.
+    # good = []
+    # for m, n in matches:
+    #     if m.distance < 0.75 * n.distance:
+    #         good.append([m])
+    # # Draw first 10 matches.
+    # img3 = cv2.drawMatchesKnn(coloured_img, kp1, coloured_img2, kp2, good, None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+    # cv2.imshow('Final Matches', img3)
+    # cv2.waitKey(10000)
+    #
     pano.set_images(img, img2, coloured_img, coloured_img2)
     stitched = pano.ransac(matches, sift_descriptor1, sift_descriptor2)
+    # stitched = pano.opencv_ransac(good, des1, des2, kp1, kp2)
 
     return stitched
+
+
+def opencv_sift(img, height, width):
+    dst = np.zeros((height, width), np.float)
+    sift = cv2.xfeatures2d.SIFT_create()
+    kp = sift.detect(img, None)
+    kp1, des = sift.compute(img, kp)
+
+    for each in kp1:
+        x = each.pt[0]
+        y = each.pt[1]
+        # print(x, " ", y)
+
+        if 0 <= y < height and 0 <= x < width:
+            dst[int(y), int(x)] = each.response
+
+    return dst, des, kp1
 
 
 def find_matches(descriptor1, descriptor2):
@@ -313,7 +321,7 @@ def adaptive_local_maximum(feature_points):
 
     new_feature_points.sort(key=lambda x: x[2])
 
-    return new_feature_points[:450]
+    return new_feature_points[:700]
 
 
 def sift_pyramid(img, height, width):
@@ -356,7 +364,7 @@ def sift_pyramid(img, height, width):
     return dst
 
 
-def sift(img, height, width, feature_points):
+def sift_desc(img, height, width, feature_points):
     img = cv2.GaussianBlur(img, (0, 0), 1.5)
     magnitude = np.zeros((height, width), np.float)
     orientation = np.zeros((height, width), np.float)

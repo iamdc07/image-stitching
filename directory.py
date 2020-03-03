@@ -20,9 +20,10 @@ def get_path(choice):
         file_2 = "project_images/MelakwaLake2.png"
         file_3 = "project_images/MelakwaLake3.png"
         file_4 = "project_images/MelakwaLake4.png"
+        # file_5 = "s2.png"
 
-        # file_list.append(file_1)
-        # file_list.append(file_2)
+        file_list.append(file_1)
+        file_list.append(file_2)
         file_list.append(file_3)
         file_list.append(file_4)
 
@@ -31,10 +32,12 @@ def get_path(choice):
         file_3 = "project_images/pano1_0010.jpg"
         file_2 = "project_images/pano1_0009.jpg"
         file_1 = "project_images/pano1_0008.jpg"
+        file_5 = "s2.png"
 
-        file_list.append(file_1)
-        file_list.append(file_2)
-        file_list.append(file_3)
+        # file_list.append(file_1)
+        # file_list.append(file_2)
+        # file_list.append(file_3)
+        file_list.append(file_5)
         file_list.append(file_4)
 
     elif choice == 4:
