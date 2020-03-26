@@ -20,7 +20,6 @@ def get_path(choice):
         file_2 = "project_images/MelakwaLake2.png"
         file_3 = "project_images/MelakwaLake3.png"
         file_4 = "project_images/MelakwaLake4.png"
-        # file_5 = "s2.png"
 
         file_list.append(file_1)
         file_list.append(file_2)
@@ -34,9 +33,9 @@ def get_path(choice):
         file_1 = "project_images/pano1_0008.jpg"
         file_5 = "s2.png"
 
-        # file_list.append(file_1)
-        # file_list.append(file_2)
-        # file_list.append(file_3)
+        file_list.append(file_1)
+        file_list.append(file_2)
+        file_list.append(file_3)
         file_list.append(file_5)
         file_list.append(file_4)
 
@@ -61,7 +60,7 @@ def get_path(choice):
 
         file_list.append(file_1)
         file_list.append(file_2)
-        # file_list.append(file_3)
+        file_list.append(file_3)
 
     elif choice == 7:
         file_1 = "project_images/ND1.png"
@@ -69,5 +68,24 @@ def get_path(choice):
 
         file_list.append(file_1)
         file_list.append(file_2)
+
+    elif choice == 8:
+        file_1 = "project_images/concordia1.png"
+        file_2 = "project_images/concordia2.png"
+        file_3 = "project_images/concordia3.png"
+
+        file_list.append(file_1)
+        file_list.append(file_2)
+        file_list.append(file_3)
+    # elif choice == 9:
+    #     file_4 = "project_images/Rooftop1.png"
+    #     file_3 = "project_images/Rooftop2.png"
+    #     file_2 = "project_images/Rooftop3.png"
+    #     file_1 = "project_images/Rooftop4.png"
+    #
+    #     file_list.append(file_1)
+    #     file_list.append(file_2)
+    #     file_list.append(file_3)
+    #     file_list.append(file_4)
 
     return file_list

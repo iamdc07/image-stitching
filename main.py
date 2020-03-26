@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+import random
 import math
 import pano, directory
 
@@ -23,16 +24,8 @@ def load_image(img, img2, coloured_img, coloured_img2):
     print("------------------- For Image 1 -------------------")
 
     # SIFT for scale invariance
-    # dst = sift_pyramid(img, height, width)
-    # print(dst[0])
-    dst, des1, kp1 = opencv_sift(img, height, width)
-    # matches, ssd_ratio_list = find_matches(des1, des2)
-    # result = cv2.drawMatches(coloured_img, kp1, coloured_img2, kp2, matches, None)
-
-    # cv2.imshow('Final Matches', result)
-    # cv2.waitKey(10000)
-
-    # exit(0)
+    dst = sift_pyramid(img, height, width)
+    # dst, des1, kp1 = opencv_sift(img, height, width)
 
     dst, ix, iy = harris_detector(dst, height, width, pad, ix, iy)
 
@@ -67,8 +60,8 @@ def load_image(img, img2, coloured_img, coloured_img2):
     print("------------------- For Image 2 -------------------")
 
     # SIFT for scale invariance
-    # dst = sift_pyramid(img2, height, width)
-    dst, des2, kp2 = opencv_sift(img2, height, width)
+    dst = sift_pyramid(img2, height, width)
+    # dst, des2, kp2 = opencv_sift(img2, height, width)
     dst, ix, iy = harris_detector(dst, height, width, pad, ix, iy)
 
     # Finding the non-maximum suppression on the feature points
@@ -109,7 +102,7 @@ def load_image(img, img2, coloured_img, coloured_img2):
     result = cv2.drawMatches(coloured_img, kp1, coloured_img2, kp2, matches, None)
 
     cv2.imshow('Final Matches', result)
-    # cv2.imwrite("2.png", result)
+    # cv2.imwrite("concordia2.png", result)
     cv2.waitKey(5000)
 
     # # create BFMatcher object
@@ -123,8 +116,9 @@ def load_image(img, img2, coloured_img, coloured_img2):
     # # Draw first 10 matches.
     # img3 = cv2.drawMatchesKnn(coloured_img, kp1, coloured_img2, kp2, good, None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
     # cv2.imshow('Final Matches', img3)
+    # cv2.imwrite("hanging.png", img3)
     # cv2.waitKey(10000)
-    #
+
     pano.set_images(img, img2, coloured_img, coloured_img2)
     stitched = pano.ransac(matches, sift_descriptor1, sift_descriptor2)
     # stitched = pano.opencv_ransac(good, des1, des2, kp1, kp2)
@@ -141,7 +135,6 @@ def opencv_sift(img, height, width):
     for each in kp1:
         x = each.pt[0]
         y = each.pt[1]
-        # print(x, " ", y)
 
         if 0 <= y < height and 0 <= x < width:
             dst[int(y), int(x)] = each.response
@@ -197,7 +190,6 @@ def find_matches(descriptor1, descriptor2):
             each_match = cv2.DMatch(index1, theindex, best_ssd)
             matches.append(each_match)
             ssd_ratio_list.append(ssd_ratio)
-            # print("Best ssd:", best_ssd, " | Second Best ssd ", s_best_ssd, " | SSD ratio ", ssd_ratio)
 
         index1 += 1
 
@@ -287,6 +279,40 @@ def non_maximum(img, height, width):
     return feature_points
 
 
+# def rotation_invariance(orientation_window):
+#     orientation = [0, 0, 0, 0, 0, 0, 0, 0]
+#     # orientation_dict = {0: 0, 1: 45, 2: 90, 3: 135, 4: 180, 5: 225, 6: 270, 7: 315}
+#     # orientation_window = np.degrees(orientation_window)
+#
+#     for x in range(0, 16):
+#         for y in range(0, 16):
+#             orientation_window[x, y] = math.degrees(orientation_window[x, y])
+#             if orientation_window[x, y] < 0:
+#                 orientation_window[x, y] += 360
+#             elif orientation_window[x, y] > 360:
+#                 orientation_window[x, y] = orientation_window[x, y] % 360
+#
+#             index = math.floor(orientation_window[x, y] / 45)
+#             print(orientation_window[x, y], index)
+#
+#             orientation[index] += 1
+#
+#     max_value = max(orientation)
+#     # max_index = orientation.index(max_value)
+#
+#     for x in range(0, 16):
+#         for y in range(0, 16):
+#             orientation_window[x, y] = orientation_window[x, y] - max_value
+#             # if orientation_window[x, y] < 0:
+#             #     orientation_window[x, y] += 360
+#
+#     # dominant_orientation = orientation_dict.get(max_index)
+#
+#     orientation_window = np.radians(orientation_window)
+#
+#     return orientation_window
+
+
 def rotation_invariance(orientation_window):
     orientation_window = np.array(orientation_window)
     feature_angle = orientation_window[8, 8]
@@ -321,7 +347,7 @@ def adaptive_local_maximum(feature_points):
 
     new_feature_points.sort(key=lambda x: x[2])
 
-    return new_feature_points[:700]
+    return new_feature_points[:1000]
 
 
 def sift_pyramid(img, height, width):
@@ -433,6 +459,7 @@ def calculate_grid_histogram(magnitude_grid, orientation_grid):
 
 
 def process_images(choice):
+    files = []
     file_list = directory.get_path(choice)
 
     img = cv2.imread(file_list[0], 0)
@@ -440,21 +467,57 @@ def process_images(choice):
     img2 = cv2.imread(file_list[1], 0)
     coloured_img2 = cv2.imread(file_list[1])
 
-    stitched = load_image(img, img2, coloured_img, coloured_img2)
-    cv2.imwrite("s.png", stitched)
+    if choice == 8 or choice == 9:
+        height, width = img.shape
 
-    for i in range(2, len(file_list)):
-        img = cv2.cvtColor(stitched, cv2.COLOR_BGR2GRAY)
-        coloured_img = stitched
-        img2 = cv2.imread(file_list[i], 0)
-        coloured_img2 = cv2.imread(file_list[i])
+        if height > width:
+            new_size = (480, 800)
+        else:
+            new_size = (540, 480)
 
+        for each in file_list:
+            img = cv2.imread(each, 0)
+            coloured_img = cv2.imread(each)
+            img = cv2.resize(img, new_size)
+            coloured_img = cv2.resize(coloured_img, new_size)
+            files.append(img)
+            files.append(coloured_img)
+
+        stitched = load_image(files[0], files[2], files[1], files[3])
+        # cv2.imwrite("s.png", stitched)
+        # r = (random.sample(range(0, 10), 1))
+        # cv2.imwrite("./output/stitched" + str(r) + ".png", stitched)
+
+        for i in range(4, len(files), 2):
+            img = cv2.cvtColor(stitched, cv2.COLOR_BGR2GRAY)
+            coloured_img = stitched
+            img2 = files[i]
+            coloured_img2 = files[i+1]
+
+            stitched = load_image(img, img2, coloured_img, coloured_img2)
+            # cv2.imwrite("s" + str(i) + ".png", stitched)
+
+        cv2.imwrite("Concordia.png", stitched)
+        cv2.imshow("Stitched", stitched)
+        cv2.waitKey()
+    else:
+        r = (random.sample(range(0, 10), 1))
         stitched = load_image(img, img2, coloured_img, coloured_img2)
-        cv2.imwrite("s" + str(i) + ".png", stitched)
+        cv2.imwrite("./output/stitched" + str(r) + ".png", stitched)
 
-    cv2.imshow("Stitched", stitched)
-    cv2.waitKey()
+        for i in range(2, len(file_list)):
+            img = cv2.cvtColor(stitched, cv2.COLOR_BGR2GRAY)
+            coloured_img = stitched
+            img2 = cv2.imread(file_list[i], 0)
+            coloured_img2 = cv2.imread(file_list[i])
+
+            stitched = load_image(img, img2, coloured_img, coloured_img2)
+
+        cv2.imwrite("Concordia.png", stitched)
+        cv2.imshow("Stitched", stitched)
+        cv2.waitKey()
 
 
 if __name__ == '__main__':
-    process_images(2)
+    selection = input('Enter choice from 1-9 :')
+    process_images(int(selection))
